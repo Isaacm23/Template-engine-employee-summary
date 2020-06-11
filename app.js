@@ -8,138 +8,111 @@ const fs = require("fs");
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 
-const render = require("./Develop/lib/htmlRenderer");
-function createEmployee() {
-	inquirer
-		.prompt(questions.empQuestions)
-		.then(answers => {
-			switch (answers.role) {
-				case "Engineer":
-					inquirer.prompt(questions.engQuestion).then(engineerAnswers => {
-						const engineerData = new Engineer(
-							answers.name,
-							answers.id,
-							answers.email,
-							engineerAnswers.github
-						);
-						readEngFile(engineerData);
+const render = require("./lib/htmlRenderer");
 
-						restartInquirer();
-					});
-					break;
-				case "Manager":
-					inquirer.prompt(questions.mgmtQuestion).then(async managerAnswers => {
-						const managerData = await new Manager(
-							answers.name,
-							answers.id,
-							answers.email,
-							managerAnswers.officeNumber
-						);
-						readMgnFile(managerData);
+run();
 
-						restartInquirer();
-					});
-					break;
-				case "Intern":
-					inquirer
-						.prompt(questions.internQuestion)
-						.then(async internAnswers => {
-							const internData = await new Intern(
-								answers.name,
-								answers.id,
-								answers.email,
-								internAnswers.internSchool
-							);
-							readInternFile(internData);
+// main function
+async function run() {
+    let cont = true;
+    const employees = [];
 
-							restartInquirer();
-						});
-					break;
-			}
-		})
-		.catch(err => {
-			throw err;
-		});
+    //while loop which gathers employees until the user is finished
+    while (cont === true) {
+        const employeeType = await inquirer.prompt({
+            type: "list",
+            name: "employeeType",
+            message: "What type of employee would you like to add?",
+            choices: ["Engineer", "Intern", "Manager"]
+        })
+        const newEmployee = generateEmployee(employeeType.employeeType, await inquirer.prompt(generateQuestions(employeeType.employeeType)));
+        employees.push(newEmployee);
+
+        const userCont = await inquirer.prompt({
+            type: "confirm",
+            name: "cont",
+            message: "Would you like to add another employee?"
+        })
+        cont = userCont.cont;
+    }
+
+    const HTML = render(employees);
+
+    //checks if filepath exists, and creates it if it doesnt
+    if (!fs.existsSync(OUTPUT_DIR)) {
+        fs.mkdirSync(OUTPUT_DIR);
+    }
+
+    fs.writeFile(outputPath, HTML, err => {
+        if (err) {
+            throw err;
+        }
+        console.log("File Created!")
+    });
 }
 
-function restartInquirer() {
-	inquirer.prompt(questions.newQuestion).then(answer => {
-		switch (answer.role) {
-			case "YES!!!":
-				createEmployee();
-				break;
+// takes data from inquirer and creates a new object using our employee subclasses
+function generateEmployee(employeeType, data) {
+    let newEmployee;
+    
+    switch (employeeType) {
+        case "Engineer":
+            newEmployee = new Engineer(data.name, data.id, data.email, data.github);
+            break;
+        case "Intern":
+            newEmployee = new Intern(data.name, data.id, data.email, data.school);
+            break;
+        case "Manager":
+            newEmployee = new Manager(data.name, data.id, data.email, data.officeNumber);
+            break;
+    }
 
-			case "NOPE, THATS EVERYONE!":
-				createHTML();
-				break;
-		}
-	});
+    return newEmployee;
 }
 
-// working
-function readEngFile(engineerData) {
-	// console.log(engineerData);
-	// data is my html string,
-	const icon = `<i class="fas fa-glasses fa-2x"></i>`;
-	fs.readFile("./html/engineer.html", "utf8", function(error, data) {
-		// console.log(engineerData.name);
-		const newData = data
-			.replace("Ename:", engineerData.name)
-			.replace("Eicon:", icon)
-			.replace("Eid", engineerData.id)
-			.replace("Eemail", engineerData.email)
-			.replace("Egighub", engineerData.github);
+// uses role argument to genereate the questions for each type of employee
+function generateQuestions(employeeType) {
+    const questions = [
+        {
+            type: "input",
+            name: "name",
+            message: "Enter the employee's name: "
+        },
+        {
+            type: "input",
+            name: "id",
+            message: "Enter the employee's id number: "
+        },
+        {
+            type: "input",
+            name: "email",
+            message: "Enter the employee's email address: "
+        }
+    ]
 
-		// read .html for all class values and the combine them before writing the file.
-		html += newData;
-		// console.log(html);
-	});
+    switch (employeeType) {
+        case "Engineer":
+            questions.push({
+                type: "input",
+                name: "github",
+                message: "Enter the engineer's GitHub account name: "
+            });
+            break;
+        case "Intern":
+            questions.push({
+                type: "input",
+                name: "school",
+                message: "Enter the intern's school: "
+            });
+            break;
+        case "Manager":
+            questions.push({
+                type: "input",
+                name: "officeNumber",
+                message: "Enter the manager's office number: "
+            });
+    }
+
+    return questions;
 }
-// not working
-function readMgnFile(managerData) {
-	// data is my html string,
-	const icon = `<i class="far fa-chart-bar fa-2x"></i>`;
-	fs.readFile("./html/manager.html", "utf8", function(error, data) {
-		const newData = data
-			.replace("Mname:", managerData.name)
-			.replace("Micon:", icon)
-			.replace("Mid", managerData.id)
-			.replace("Memail", managerData.email)
-			.replace("Mphone", managerData.officeNumber);
-
-		// read .html for all class values and the combine them before writing the file.
-		html += newData;
-	});
-}
-// not working
-function readInternFile(internData) {
-	// data is my html string,
-	const icon = `<i class="fas fa-eye fa-2x"></i>`;
-	fs.readFile("./html/intern.html", "utf8", function(error, data) {
-		const newData = data
-			.replace("Iname:", internData.name)
-			.replace("Iicon:", icon)
-			.replace("Iid", internData.id)
-			.replace("Iemail", internData.email)
-			.replace("Ischool", internData.internSchool);
-
-		// read .html for all class values and the combine them before writing the file.
-		html += newData;
-	});
-}
-
-function createHTML() {
-	fs.readFile("./html/main.html", "utf8", (err, data) => {
-		const newData = data.replace("{{html}}", html);
-
-		fs.writeFile("./output/index.html", newData, "utf8", err => {
-			if (err) return console.log(err);
-		});
-		console.log(".html created");
-	});
-}
-
-module.exports = {};
-
-createEmployee();
 
