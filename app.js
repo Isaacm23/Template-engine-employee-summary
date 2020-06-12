@@ -8,39 +8,11 @@ const fs = require("fs");
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 
-const render = require("./lib/htmlRenderer");
-
-run();
-
-// main function
-async function run() {
     let cont = true;
     const employees = [];
 
     //while loop which gathers employees until the user is finished
-    while (cont === true) {
-        const employeeType = await inquirer.prompt({
-            type: "list",
-            name: "employeeType",
-            message: "What type of employee would you like to add?",
-            choices: ["Engineer", "Intern", "Manager"]
-        })
-        const newEmployee = generateEmployee(employeeType.employeeType, await inquirer.prompt(generateQuestions(employeeType.employeeType)));
-        employees.push(newEmployee);
-
-        const userCont = await inquirer.prompt({
-            type: "confirm",
-            name: "cont",
-            message: "Would you like to add another employee?"
-        })
-        cont = userCont.cont;
-    }
-
-    const HTML = render(employees);
-
-    //checks if filepath exists, and creates it if it doesnt
-    if (!fs.existsSync(OUTPUT_DIR)) {
-        fs.mkdirSync(OUTPUT_DIR);
+    w
     }
 
     fs.writeFile(outputPath, HTML, err => {
